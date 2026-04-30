@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="開通計算">
+<link rel="manifest" href="manifest.json">
+<title>開通件数計算</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f1a;--bg2:#1a1a2e;--bg3:#16213e;
+  --accent:#4f8ef7;--accent2:#38d9a9;
+  --text:#f0f0f0;--text2:#8888aa;
+  --border:rgba(255,255,255,0.08);
+  --success:#38d9a9;--warning:#ffd43b;--danger:#ff6b6b;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;min-height:100vh;padding-bottom:40px}
+.header{background:var(--bg2);padding:52px 20px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.header h1{font-size:18px;font-weight:700}
+.header p{font-size:12px;color:var(--text2);margin-top:2px}
+.container{padding:0 16px}
+.section{margin-top:20px}
+.section-title{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.card{background:var(--bg2);border-radius:14px;border:1px solid var(--border);overflow:hidden}
+.input-row{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid var(--border)}
+.input-row:last-child{border-bottom:none}
+.input-label{flex:1;font-size:14px}
+.input-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.input-right{display:flex;align-items:center;gap:6px}
+.num-input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-weight:600;text-align:right;padding:6px 10px;width:90px;outline:none;-webkit-appearance:none}
+.num-input:focus{border-color:var(--accent)}
+.unit{font-size:12px;color:var(--text2);min-width:28px}
+.result-badge{font-size:13px;color:var(--accent2);font-weight:600;min-width:70px;text-align:right}
+.funnel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.funnel-card{background:var(--bg2);border-radius:12px;border:1px solid var(--border);padding:12px 8px;text-align:center}
+.funnel-label{font-size:10px;color:var(--text2);margin-bottom:4px}
+.funnel-val{font-size:22px;font-weight:700}
+.funnel-unit{font-size:10px;color:var(--text2);margin-top:2px}
+.result-big{background:var(--bg2);border:1px solid rgba(79,142,247,0.3);border-radius:16px;padding:20px;text-align:center;margin-bottom:8px}
+.result-big-label{font-size:12px;color:var(--text2);margin-bottom:6px}
+.result-big-val{font-size:36px;font-weight:800;color:var(--accent);letter-spacing:-1px}
+.result-2grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.result-small{background:var(--bg2);border-radius:12px;border:1px solid var(--border);padding:14px;text-align:center}
+.result-small-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+.result-small-val{font-size:20px;font-weight:700}
+.target-wrap{background:var(--bg2);border-radius:14px;border:1px solid var(--border);padding:16px;margin-bottom:8px}
+.target-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.target-title{font-size:13px;font-weight:600}
+.target-pct{font-size:18px;font-weight:800}
+.bar-bg{background:var(--bg3);border-radius:6px;height:10px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width .4s ease;background:var(--accent)}
+.target-sub{font-size:11px;color:var(--text2);margin-top:8px;text-align:right}
+.pl-card{background:var(--bg2);border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:8px}
+.pl-title{font-size:13px;font-weight:600;padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text2)}
+.pl-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px}
+.pl-row:last-child{border-bottom:none}
+.pl-row.total{font-weight:700;font-size:14px}
+.pl-row.subtotal{color:var(--text2);font-size:12px}
+.pl-val{font-weight:600}
+.pl-val.positive{color:var(--success)}
+.pl-val.negative{color:var(--danger)}
+.pl-val.accent{color:var(--accent)}
+.success{color:var(--success)!important}
+.warning{color:var(--warning)!important}
+.danger{color:var(--danger)!important}
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:12px;border:1px solid var(--border)}
+.tab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer}
+.tab.active{background:var(--accent);color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.area-tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+.tag-tokyo{background:rgba(79,142,247,0.2);color:#4f8ef7}
+.tag-osaka{background:rgba(56,217,169,0.2);color:#38d9a9}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>開通件数計算</h1>
+  <p>配布枚数から売上・損益を自動計算</p>
+</div>
+<div class="container">
+  <div class="section">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('input')">入力</button>
+      <button class="tab" onclick="switchTab('cost')">コスト</button>
+      <button class="tab" onclick="switchTab('funnel')">ファネル</button>
+      <button class="tab" onclick="switchTab('result')">損益</button>
+    </div>
+  </div>
+
+  <!-- 入力タブ -->
+  <div class="tab-content active" id="tab-input">
+    <div class="section">
+      <div class="section-title">エリア別配布枚数</div>
+      <div class="card">
+        <div class="input-row">
+          <div class="input-label">東京 <span class="area-tag tag-tokyo">自社ポス</span><div class="input-sub">安斎・大村</div></div>
+          <div class="input-right"><input type="number" class="num-input" id="tokyo" value="6000" step="500" min="0" oninput="calc()"><span class="unit">枚</span></div>
+        </div>
+        <div class="input-row">
+          <div class="input-label">大阪 <span class="area-tag tag-osaka">外注ポス</span><div class="input-sub">上西・河岸・こてつ</div></div>
+          <div class="input-right"><input type="number" class="num-input" id="osaka" value="16000" step="500" min="0" oninput="calc()"><span class="unit">枚</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">ファネル設定</div>
+      <div class="card">
+        <div class="input-row"><div class="input-label">反響率</div><div class="input-right"><input type="number" class="num-input" id="r1" value="1.2" step="0.1" min="0" max="100" oninput="calc()"><span class="unit">%</span></div></div>
+        <div class="input-row"><div class="input-label">対面率</div><div class="input-right"><input type="number" class="num-input" id="r2" value="80" step="1" min="0" max="100" oninput="calc()"><span class="unit">%</span></div></div>
+        <div class="input-row"><div class="input-label">獲得率</div><div class="input-right"><input type="number" class="num-input" id="r3" value="30" step="1" min="0" max="100" oninput="calc()"><span class="unit">%</span></div></div>
+        <div class="input-row"><div class="input-label">後確通過率</div><div class="input-right"><input type="number" class="num-input" id="r4" value="90" step="1" min="0" max="100" oninput="calc()"><span class="unit">%</span></div></div>
+        <div class="input-row"><div class="input-label">開通率</div><div class="input-right"><input type="number" class="num-input" id="r5" value="80" step="1" min="0" max="100" oninput="calc()"><span class="unit">%</span></div></div>
+        <div class="input-row"><div class="input-label">売上単価</div><div class="input-right"><input type="number" class="num-input" id="tanka" value="89000" step="1000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">月間目標売上</div><div class="input-right"><input type="number" class="num-input" id="target" value="3000000" step="100000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- コストタブ -->
+  <div class="tab-content" id="tab-cost">
+    <div class="section">
+      <div class="section-title">変動費単価</div>
+      <div class="card">
+        <div class="input-row"><div class="input-label">チラシ単価</div><div class="input-right"><input type="number" class="num-input" id="c-chirashi" value="2.5" step="0.5" min="0" oninput="calc()"><span class="unit">円/枚</span></div></div>
+        <div class="input-row"><div class="input-label">OPP袋単価</div><div class="input-right"><input type="number" class="num-input" id="c-opp" value="3.5" step="0.5" min="0" oninput="calc()"><span class="unit">円/枚</span></div></div>
+        <div class="input-row"><div class="input-label">外注ポス単価<div class="input-sub">大阪のみ</div></div><div class="input-right"><input type="number" class="num-input" id="c-posting" value="13.5" step="0.5" min="0" oninput="calc()"><span class="unit">円/枚</span></div></div>
+        <div class="input-row"><div class="input-label">こてつ フルコミ<div class="input-sub">大阪・変動費</div></div><div class="input-right"><input type="number" class="num-input" id="c-kotetsu" value="40000" step="1000" min="0" oninput="calc()"><span class="unit">円/件</span></div></div>
+        <div class="input-row"><div class="input-label">こてつ 月間件数</div><div class="input-right"><input type="number" class="num-input" id="c-kotetsu-cnt" value="10" step="1" min="0" oninput="calc()"><span class="unit">件</span></div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">固定費（月間）</div>
+      <div class="card">
+        <div class="input-row"><div class="input-label">安斎 給与<div class="input-sub">×1.2 社保込</div></div><div class="input-right"><input type="number" class="num-input" id="f-anzai" value="300000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">大村 給与<div class="input-sub">×1.2 社保込</div></div><div class="input-right"><input type="number" class="num-input" id="f-omura" value="600000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">上西 給与<div class="input-sub">×1.2 社保込</div></div><div class="input-right"><input type="number" class="num-input" id="f-uenishi" value="300000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">河岸 給与<div class="input-sub">×1.2 社保込</div></div><div class="input-right"><input type="number" class="num-input" id="f-kishi" value="300000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">交通費</div><div class="input-right"><input type="number" class="num-input" id="f-kotsu" value="250000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">オフィス費用</div><div class="input-right"><input type="number" class="num-input" id="f-office" value="300000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+        <div class="input-row"><div class="input-label">その他経費</div><div class="input-right"><input type="number" class="num-input" id="f-other" value="160000" step="10000" min="0" oninput="calc()"><span class="unit">円</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ファネルタブ -->
+  <div class="tab-content" id="tab-funnel">
+    <div class="section">
+      <div class="section-title">ファネル（合計）</div>
+      <div class="funnel-grid">
+        <div class="funnel-card"><div class="funnel-label">配布枚数</div><div class="funnel-val" id="f-haishu">—</div><div class="funnel-unit">枚</div></div>
+        <div class="funnel-card"><div class="funnel-label">アポ数</div><div class="funnel-val" id="f-appo">—</div><div class="funnel-unit">件</div></div>
+        <div class="funnel-card"><div class="funnel-label">対面数</div><div class="funnel-val" id="f-taimen">—</div><div class="funnel-unit">件</div></div>
+        <div class="funnel-card"><div class="funnel-label">獲得数</div><div class="funnel-val" id="f-shutoku">—</div><div class="funnel-unit">件</div></div>
+        <div class="funnel-card"><div class="funnel-label">後確通過</div><div class="funnel-val" id="f-koku">—</div><div class="funnel-unit">件</div></div>
+        <div class="funnel-card" style="border:1px solid rgba(79,142,247,0.4)"><div class="funnel-label">開通数</div><div class="funnel-val" id="f-kaisen" style="color:var(--accent)">—</div><div class="funnel-unit">件</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">エリア別開通件数</div>
+      <div class="card">
+        <div class="input-row"><div class="input-label">東京（安斎・大村）</div><div class="result-badge" id="f-tokyo">—</div></div>
+        <div class="input-row"><div class="input-label">大阪（上西・河岸・こてつ）</div><div class="result-badge" id="f-osaka">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 損益タブ -->
+  <div class="tab-content" id="tab-result">
+    <div class="section">
+      <div class="result-big">
+        <div class="result-big-label">月間売上（予想）</div>
+        <div class="result-big-val" id="r-uriage">—</div>
+      </div>
+      <div class="target-wrap">
+        <div class="target-header">
+          <div class="target-title">目標達成率</div>
+          <div class="target-pct" id="r-pct">—</div>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" id="r-bar" style="width:0%"></div></div>
+        <div class="target-sub" id="r-nokori">—</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">東京 損益 <span class="area-tag tag-tokyo">自社ポス</span></div>
+      <div class="pl-card">
+        <div class="pl-row"><span>売上高</span><span class="pl-val accent" id="pl-t-rev">—</span></div>
+        <div class="pl-row subtotal"><span>　チラシ・OPP</span><span class="pl-val" id="pl-t-vc1">—</span></div>
+        <div class="pl-row"><span>限界利益</span><span class="pl-val positive" id="pl-t-margin">—</span></div>
+        <div class="pl-row subtotal"><span>　限界利益率</span><span class="pl-val" id="pl-t-mrate">—</span></div>
+        <div class="pl-row subtotal"><span>　安斎・大村 給与×1.2</span><span class="pl-val" id="pl-t-sal">—</span></div>
+        <div class="pl-row subtotal"><span>　交通費・オフィス・経費</span><span class="pl-val" id="pl-t-fix">—</span></div>
+        <div class="pl-row total"><span>営業利益</span><span class="pl-val" id="pl-t-op">—</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">大阪 損益 <span class="area-tag tag-osaka">外注ポス</span></div>
+      <div class="pl-card">
+        <div class="pl-row"><span>売上高</span><span class="pl-val accent" id="pl-o-rev">—</span></div>
+        <div class="pl-row subtotal"><span>　チラシ・OPP</span><span class="pl-val" id="pl-o-vc1">—</span></div>
+        <div class="pl-row subtotal"><span>　外注ポス費用</span><span class="pl-val" id="pl-o-vc2">—</span></div>
+        <div class="pl-row subtotal"><span>　こてつ フルコミ</span><span class="pl-val" id="pl-o-vc3">—</span></div>
+        <div class="pl-row"><span>限界利益</span><span class="pl-val positive" id="pl-o-margin">—</span></div>
+        <div class="pl-row subtotal"><span>　限界利益率</span><span class="pl-val" id="pl-o-mrate">—</span></div>
+        <div class="pl-row subtotal"><span>　上西・河岸 給与×1.2</span><span class="pl-val" id="pl-o-sal">—</span></div>
+        <div class="pl-row total"><span>営業利益</span><span class="pl-val" id="pl-o-op">—</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">全体合計</div>
+      <div class="pl-card">
+        <div class="pl-row"><span>売上高</span><span class="pl-val accent" id="pl-a-rev">—</span></div>
+        <div class="pl-row"><span>限界利益</span><span class="pl-val positive" id="pl-a-margin">—</span></div>
+        <div class="pl-row subtotal"><span>　限界利益率</span><span class="pl-val" id="pl-a-mrate">—</span></div>
+        <div class="pl-row subtotal"><span>　全固定費</span><span class="pl-val" id="pl-a-fix">—</span></div>
+        <div class="pl-row total"><span>営業利益</span><span class="pl-val" id="pl-a-op">—</span></div>
+        <div class="pl-row subtotal"><span>　営業利益率</span><span class="pl-val" id="pl-a-oprate">—</span></div>
+        <div class="pl-row subtotal"><span>　労働分配率</span><span class="pl-val" id="pl-a-ldr">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(name){
+  ['input','cost','funnel','result'].forEach((t,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',t===name);
+    document.getElementById('tab-'+t).classList.toggle('active',t===name);
+  });
+}
+
+function fmt(n){return Math.round(n).toLocaleString()+'円'}
+function fmtMan(n){return '約'+Math.round(n/10000).toLocaleString()+'万円'}
+function fmtPct(n){return Math.round(n*10)/10+'%'}
+function colorVal(el,n){
+  el.className='pl-val '+(n>=0?'positive':'negative');
+  el.textContent=fmt(n);
+}
+
+function calc(){
+  const tokyo=parseFloat(document.getElementById('tokyo').value)||0;
+  const osaka=parseFloat(document.getElementById('osaka').value)||0;
+  const total=tokyo+osaka;
+  const r1=(parseFloat(document.getElementById('r1').value)||0)/100;
+  const r2=(parseFloat(document.getElementById('r2').value)||0)/100;
+  const r3=(parseFloat(document.getElementById('r3').value)||0)/100;
+  const r4=(parseFloat(document.getElementById('r4').value)||0)/100;
+  const r5=(parseFloat(document.getElementById('r5').value)||0)/100;
+  const tanka=parseFloat(document.getElementById('tanka').value)||0;
+  const target=parseFloat(document.getElementById('target').value)||3000000;
+
+  const chirashi=parseFloat(document.getElementById('c-chirashi').value)||0;
+  const opp=parseFloat(document.getElementById('c-opp').value)||0;
+  const posting=parseFloat(document.getElementById('c-posting').value)||0;
+  const kotetsu=parseFloat(document.getElementById('c-kotetsu').value)||0;
+  const kotetsuCnt=parseFloat(document.getElementById('c-kotetsu-cnt').value)||0;
+
+  const fAnzai=(parseFloat(document.getElementById('f-anzai').value)||0)*1.2;
+  const fOmura=(parseFloat(document.getElementById('f-omura').value)||0)*1.2;
+  const fUenishi=(parseFloat(document.getElementById('f-uenishi').value)||0)*1.2;
+  const fKishi=(parseFloat(document.getElementById('f-kishi').value)||0)*1.2;
+  const fKotsu=parseFloat(document.getElementById('f-kotsu').value)||0;
+  const fOffice=parseFloat(document.getElementById('f-office').value)||0;
+  const fOther=parseFloat(document.getElementById('f-other').value)||0;
+
+  // ファネル
+  const appo=total*r1;
+  const taimenN=appo*r2;
+  const shutokuN=taimenN*r3;
+  const kokuN=shutokuN*r4;
+  const kaisenN=kokuN*r5;
+  const uriage=kaisenN*tanka;
+  const tokyoK=total>0?(tokyo/total)*kaisenN:0;
+  const osakaK=total>0?(osaka/total)*kaisenN:0;
+  const haishuPerKaisen=kaisenN>0?total/kaisenN:217;
+
+  // ファネル表示
+  document.getElementById('f-haishu').textContent=fmt(total).replace('円','');
+  document.getElementById('f-appo').textContent=Math.round(appo).toLocaleString();
+  document.getElementById('f-taimen').textContent=Math.round(taimenN).toLocaleString();
+  document.getElementById('f-shutoku').textContent=Math.round(shutokuN).toLocaleString();
+  document.getElementById('f-koku').textContent=Math.round(kokuN).toLocaleString();
+  document.getElementById('f-kaisen').textContent=Math.round(kaisenN).toLocaleString();
+  document.getElementById('f-tokyo').textContent=Math.round(tokyoK)+'件';
+  document.getElementById('f-osaka').textContent=Math.round(osakaK)+'件';
+
+  // 売上
+  const tRev=tokyoK*tanka;
+  const oRev=osakaK*tanka;
+
+  // 変動費（1件あたりの枚数）
+  const hpk=haishuPerKaisen;
+  const vcPerKaishaJisha=hpk*(chirashi+opp);
+  const vcPerKaishaGachu=hpk*(chirashi+opp+posting);
+
+  const tVC1=tokyoK*hpk*(chirashi+opp);
+  const oVC1=osakaK*hpk*(chirashi+opp);
+  const oVC2=osaka*(posting);
+  const oVC3=kotetsuCnt*kotetsu;
+
+  // 限界利益
+  const tMargin=tRev-tVC1;
+  const oMargin=oRev-oVC1-oVC2-oVC3;
+  const aMargin=tMargin+oMargin;
+
+  // 固定費
+  const tFixSal=fAnzai+fOmura;
+  const oFixSal=fUenishi+fKishi;
+  const commonFix=fKotsu+fOffice+fOther;
+  const aFix=tFixSal+oFixSal+commonFix;
+
+  // 営業利益（東京・大阪按分、共通固定費は全体から引く）
+  const tOp=tMargin-tFixSal;
+  const oOp=oMargin-oFixSal;
+  const aOp=aMargin-aFix;
+
+  // 全体売上表示
+  document.getElementById('r-uriage').textContent=fmtMan(uriage);
+  const pct=target>0?Math.min(Math.round(uriage/target*100),999):0;
+  const pctEl=document.getElementById('r-pct');
+  pctEl.textContent=pct+'%';
+  pctEl.className='target-pct '+(pct>=100?'success':pct>=70?'warning':'danger');
+  const bar=document.getElementById('r-bar');
+  bar.style.width=Math.min(pct,100)+'%';
+  bar.style.background=pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--accent)';
+  const nokori=target-uriage;
+  const nokoriEl=document.getElementById('r-nokori');
+  if(nokori<=0){nokoriEl.textContent='目標達成！';nokoriEl.className='target-sub success';}
+  else{nokoriEl.textContent='あと約'+Math.round(nokori/10000).toLocaleString()+'万円';nokoriEl.className='target-sub';}
+
+  // 東京PL
+  document.getElementById('pl-t-rev').textContent=fmtMan(tRev);
+  document.getElementById('pl-t-vc1').textContent='-'+fmt(tVC1);
+  document.getElementById('pl-t-margin').textContent=fmtMan(tMargin);
+  document.getElementById('pl-t-mrate').textContent=tRev>0?fmtPct(tMargin/tRev*100):'—';
+  document.getElementById('pl-t-sal').textContent='-'+fmt(tFixSal);
+  document.getElementById('pl-t-fix').textContent='-'+fmt(commonFix);
+  colorVal(document.getElementById('pl-t-op'),tOp-commonFix);
+
+  // 大阪PL
+  document.getElementById('pl-o-rev').textContent=fmtMan(oRev);
+  document.getElementById('pl-o-vc1').textContent='-'+fmt(oVC1);
+  document.getElementById('pl-o-vc2').textContent='-'+fmt(oVC2);
+  document.getElementById('pl-o-vc3').textContent='-'+fmt(oVC3);
+  document.getElementById('pl-o-margin').textContent=fmtMan(oMargin);
+  document.getElementById('pl-o-mrate').textContent=oRev>0?fmtPct(oMargin/oRev*100):'—';
+  document.getElementById('pl-o-sal').textContent='-'+fmt(oFixSal);
+  colorVal(document.getElementById('pl-o-op'),oOp);
+
+  // 全体PL
+  document.getElementById('pl-a-rev').textContent=fmtMan(uriage);
+  document.getElementById('pl-a-margin').textContent=fmtMan(aMargin);
+  document.getElementById('pl-a-mrate').textContent=uriage>0?fmtPct(aMargin/uriage*100):'—';
+  document.getElementById('pl-a-fix').textContent='-'+fmt(aFix);
+  colorVal(document.getElementById('pl-a-op'),aOp);
+  document.getElementById('pl-a-oprate').textContent=uriage>0?fmtPct(aOp/uriage*100):'—';
+  const allSal=tFixSal+oFixSal;
+  document.getElementById('pl-a-ldr').textContent=aMargin>0?fmtPct(allSal/aMargin*100):'—';
+}
+calc();
+</script>
+</body>
+</html>
